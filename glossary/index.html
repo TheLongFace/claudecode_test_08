@@ -45,13 +45,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
 
-.app{display:flex;flex-direction:column;height:100%;max-width:1280px;margin:0 auto;padding-inline:16px}
+.app{display:flex;flex-direction:column;height:100%;max-width:1440px;margin:0 auto;padding-inline:16px}
 
 /* ヘッダー */
-.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-block:18px 12px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 24px;padding-block:10px 8px}
 .brand{min-width:0}
-.brand .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:500}
-.brand h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(22px,3vw,30px);line-height:1.25;text-wrap:balance}
+.brand .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:500}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(18px,2.2vw,24px);line-height:1.3;text-wrap:balance}
 .progress{display:flex;flex-direction:column;gap:6px;min-width:220px;flex:0 1 320px}
 .progress .nums{display:flex;gap:14px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 .progress .nums b{font-family:var(--f-num);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -62,9 +62,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .bar .m{background:var(--mastered)} .bar .l{background:var(--learning)}
 
 /* 本体 */
-.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:20px;padding-bottom:16px}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(340px,46%) 1fr;gap:16px;padding-bottom:10px}
 .pane-list{display:flex;flex-direction:column;min-height:0;background:var(--card);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
-.tools{display:flex;flex-direction:column;gap:10px;padding:12px;border-bottom:1px solid var(--rule)}
+.tools{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-bottom:1px solid var(--rule)}
 .search{position:relative}
 .search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--rule);border-radius:8px;background:var(--paper)}
 .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:2}
@@ -72,8 +72,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .seg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--paper)}
 .seg button{border:0;background:transparent;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--muted);font-weight:500}
 .seg button[aria-pressed="true"]{background:var(--band);color:var(--band-ink)}
-select.filter{border:1px solid var(--rule);border-radius:8px;background:var(--paper);padding:6px 8px;font-size:13px;flex:1;min-width:120px}
-.count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+select.filter{border:1px solid var(--rule);border-radius:8px;background:var(--paper);padding:6px 8px;font-size:13px;flex:1;min-width:110px}
+.tools .btn{padding:5px 10px}
+.count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:auto;white-space:nowrap}
 
 .listwrap{flex:1;min-height:0;display:flex}
 .jump{display:flex;flex-direction:column;gap:1px;padding:6px 2px;border-right:1px solid var(--rule);overflow-y:auto;scrollbar-width:none}
@@ -82,10 +83,10 @@ select.filter{border:1px solid var(--rule);border-radius:8px;background:var(--pa
 .list{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain}
 .group-h{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 12px;background:var(--band);color:var(--band-ink);font-weight:700;font-size:13px;letter-spacing:.06em}
 .group-h small{font-family:var(--f-num);font-weight:500;opacity:.8;letter-spacing:0}
-.item{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:baseline;width:100%;text-align:left;border:0;border-bottom:1px solid var(--rule);background:none;padding:9px 12px;cursor:pointer}
+.item{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:baseline;width:100%;text-align:left;border:0;border-bottom:1px solid var(--rule);background:none;padding:6px 12px;cursor:pointer}
 .item:hover{background:var(--accent-soft)}
 .item[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
-.item .t{min-width:0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.item .t{min-width:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
 .item .p{font-family:var(--f-num);font-size:11px;color:var(--muted);white-space:nowrap}
 .item .memo-mark{font-size:11px;color:var(--accent);margin-left:6px}
 .item mark,.card mark{background:var(--hl);color:inherit;border-radius:2px}
@@ -123,7 +124,7 @@ select.filter{border:1px solid var(--rule);border-radius:8px;background:var(--pa
 textarea#memo{width:100%;min-height:150px;resize:vertical;border:1px solid var(--rule);border-radius:8px;padding:10px 12px;background:var(--paper);line-height:1.7}
 .memo-foot{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 
-.foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;padding-block:10px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--rule)}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 16px;padding-block:6px 8px;font-size:12px;color:var(--muted);border-top:1px solid var(--rule)}
 .foot .row{gap:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:8px;font-size:13px;z-index:50;box-shadow:var(--shadow)}
 
@@ -180,10 +181,8 @@ textarea#memo{width:100%;min-height:150px;resize:vertical;border:1px solid var(-
             <option value="2">習得のみ</option>
             <option value="memo">メモありのみ</option>
           </select>
-        </div>
-        <div class="row" style="justify-content:space-between">
-          <span class="count" id="count"></span>
           <button type="button" class="btn" id="nextUnlearned">未学習の語へ</button>
+          <span class="count" id="count"></span>
         </div>
       </div>
       <div class="listwrap">
