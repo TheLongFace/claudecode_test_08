@@ -22,6 +22,7 @@
   --learning:#b26a00;   --learning-soft:#fdf0d9;
   --mastered:#1f7a4d;   --mastered-soft:#ddf2e6;
   --hl:#fff1a8;
+  --danger:#b4232c;  --danger-soft:#fde8e8;
   --shadow:0 1px 2px rgba(20,29,51,.06),0 6px 24px rgba(20,29,51,.06);
   --f-display:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
   --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
@@ -31,12 +32,12 @@
   --paper:#0f1422; --card:#171e30; --ink:#e7ebf4; --muted:#9aa5bd; --rule:#2a3350;
   --band:#2b3f86; --band-ink:#ffffff; --accent:#8aa8ff; --accent-soft:#1f2b4f;
   --learning:#f0b45a; --learning-soft:#3a2c14; --mastered:#5fd39a; --mastered-soft:#163527;
-  --hl:#5a4b10; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}}
+  --hl:#5a4b10; --danger:#ff8a8a; --danger-soft:#3d1a1d; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#0f1422; --card:#171e30; --ink:#e7ebf4; --muted:#9aa5bd; --rule:#2a3350;
   --band:#2b3f86; --band-ink:#ffffff; --accent:#8aa8ff; --accent-soft:#1f2b4f;
   --learning:#f0b45a; --learning-soft:#3a2c14; --mastered:#5fd39a; --mastered-soft:#163527;
-  --hl:#5a4b10; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}
+  --hl:#5a4b10; --danger:#ff8a8a; --danger-soft:#3d1a1d; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -126,6 +127,13 @@ textarea#memo{width:100%;min-height:150px;resize:vertical;border:1px solid var(-
 
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 16px;padding-block:6px 8px;font-size:12px;color:var(--muted);border-top:1px solid var(--rule)}
 .foot .row{gap:8px}
+.store-info{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.store-info::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--mastered)}
+.store-info[data-level="wait"]::before{background:var(--muted)}
+.store-info[data-level="warn"]::before{background:var(--learning)}
+.store-info[data-level="bad"]{color:var(--danger);font-weight:700}
+.store-info[data-level="bad"]::before{background:var(--danger)}
+.save-warn{margin-bottom:10px;padding:10px 14px;border:1px solid var(--danger);border-radius:8px;background:var(--danger-soft);color:var(--danger);font-size:13px;line-height:1.6}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:8px;font-size:13px;z-index:50;box-shadow:var(--shadow)}
 
 /* 狭い画面：カードを全面に重ねる */
@@ -162,6 +170,7 @@ textarea#memo{width:100%;min-height:150px;resize:vertical;border:1px solid var(-
     </div>
   </header>
 
+  <div class="save-warn" id="saveWarn" role="alert" hidden></div>
   <main class="main">
     <section class="pane-list" aria-label="索引">
       <div class="tools">
@@ -195,7 +204,7 @@ textarea#memo{width:100%;min-height:150px;resize:vertical;border:1px solid var(-
   </main>
 
   <footer class="foot">
-    <span id="storeInfo">メモと学習状態はこのブラウザに保存されます。</span>
+    <span id="storeInfo" class="store-info" data-level="wait" role="status">保存先を確認しています…</span>
     <div class="row">
       <button type="button" class="btn" id="exportBtn">メモを書き出す</button>
       <label class="btn" for="importFile" style="cursor:pointer">メモを読み込む</label>
@@ -254,22 +263,31 @@ function highlight(text, q){
 var LS_KEY = "iswp2026-glossary-notes";
 var LS_UI = "iswp2026-glossary-ui";
 function lsGet(k){ try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e){ return null; } }
-function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return localStorage.getItem(k) !== null; } catch(e){ return false; } }
+// このブラウザに実際に書き込めるかを確かめる（プライベートブラウズや埋め込み表示では失敗することがある）
+var LOCAL_OK = (function(){ try { var k = "__iswp2026_probe"; localStorage.setItem(k, "1"); var ok = localStorage.getItem(k) === "1"; localStorage.removeItem(k); return ok; } catch(e){ return false; } })();
+if (LOCAL_OK && navigator.storage && navigator.storage.persist){ try { navigator.storage.persist().catch(function(){}); } catch(e){} }
 
 var store = {
   notes: lsGet(LS_KEY) || {},   // id -> {t, status, memo, updated}
   col: null,
+  local: LOCAL_OK,
+  cloud: "none",                // none | connecting | on | failed
   get: function(id){ return this.notes[id] || { status:0, memo:"", updated:0 }; },
+  persistent: function(){ return this.cloud === "on" || this.local; },
   put: function(id, patch){
-    var cur = this.get(id);
+    var cur = this.get(id), self = this;
     var next = { t:BY_ID[id].t, status:cur.status||0, memo:cur.memo||"", updated:Date.now() };
     for (var k in patch) next[k] = patch[k];
     if (!next.status && !next.memo){ delete this.notes[id]; }
     else this.notes[id] = next;
-    lsSet(LS_KEY, this.notes);
+    if (this.local && !lsSet(LS_KEY, this.notes)){ this.local = false; renderStoreInfo(); }
     if (this.col){
       var ref = this.col.doc(id);
-      (this.notes[id] ? ref.set(next) : ref.delete()).catch(function(){ toast("クラウドへの保存に失敗しました。このブラウザには保存されています。"); });
+      (this.notes[id] ? ref.set(next) : ref.delete()).catch(function(){
+        self.cloud = "failed"; self.col = null; renderStoreInfo();
+        toast(self.local ? "アカウントへの保存に失敗しました。このブラウザには保存しています。" : "保存に失敗しました。「メモを書き出す」でファイルに保存してください。");
+      });
     }
   },
   merge: function(incoming){
@@ -279,31 +297,56 @@ var store = {
       var cur = self.notes[id];
       if (!cur || (n.updated||0) > (cur.updated||0)){ self.notes[id] = { t:BY_ID[id].t, status:+n.status||0, memo:String(n.memo||""), updated:n.updated||Date.now() }; changed++; }
     });
-    lsSet(LS_KEY, this.notes);
+    if (this.local) lsSet(LS_KEY, this.notes);
     return changed;
   },
   connect: async function(){
     if (!(window.claude && typeof window.claude.use === "function")) return;
+    this.cloud = "connecting"; renderStoreInfo();
     try {
       var db = await window.claude.use("db"), user = await window.claude.use("user");
-      if (!db || !user) return;
-      var uid = await user.id(); if (!uid) return;
+      var uid = db && user ? await user.id() : null;
+      if (!uid){ this.cloud = "none"; renderStoreInfo(); return; }
       var col = db.collection("data/users/" + uid);
+      // 初回はここで保存の許可を求めるダイアログが出る
       var snap = await col.get(), remote = {};
       snap.docs.forEach(function(d){ remote[d.id] = d.data(); });
-      // ローカルにしかない新しい記録はクラウドへ送る
-      var self = this, local = this.notes;
+      var local = JSON.parse(JSON.stringify(this.notes));
       this.merge(remote);
-      Object.keys(local).forEach(function(id){
+      // この端末にしかない、またはこの端末のほうが新しい記録はアカウントへ送る
+      await Promise.all(Object.keys(local).map(function(id){
         var r = remote[id];
-        if (!r || (local[id].updated||0) > (r.updated||0)) col.doc(id).set(local[id]).catch(function(){});
-      });
-      this.col = col;
-      document.getElementById("storeInfo").textContent = "メモと学習状態はあなたのアカウントに保存され、他の端末からも見られます（他の人には見えません）。";
+        return (!r || (local[id].updated||0) > (r.updated||0)) ? col.doc(id).set(local[id]) : null;
+      }));
+      this.col = col; this.cloud = "on";
       renderAll();
-    } catch(e){}
+    } catch(e){
+      this.cloud = "failed"; this.col = null;
+      renderStoreInfo();
+    }
   }
 };
+
+function renderStoreInfo(){
+  var info = $("storeInfo"), warn = $("saveWarn"), level = "ok", text, banner = "";
+  if (store.cloud === "on"){
+    text = "アカウントに保存しています。リロードしても、他の端末で開いても残ります（他の人には見えません）。";
+  } else if (store.cloud === "connecting"){
+    text = "アカウントから記録を読み込んでいます…"; level = "wait";
+  } else if (store.cloud === "failed" && store.local){
+    text = "アカウントへの保存が許可されていないため、このブラウザだけに保存しています。"; level = "warn";
+  } else if (store.local){
+    text = "このブラウザに保存しています。同じブラウザで開けば、リロードしても残ります。";
+  } else {
+    level = "bad";
+    text = "このブラウザでは記録を保存できません。";
+    banner = store.cloud === "failed"
+      ? "記録を保存できていません。アカウントへの保存が許可されておらず、このブラウザにも保存できない状態です。ページ右上のメニューから権限を許可して開き直すか、「メモを書き出す」でファイルに保存してください。"
+      : "記録を保存できていません。プライベートブラウズや、LINE・X などのアプリ内ブラウザで開いていると、リロードや閉じたときに消えます。Safari や Chrome の通常モードで開き直してください。今の記録は画面下の「メモを書き出す」でファイルに保存できます。";
+  }
+  info.textContent = text; info.dataset.level = level;
+  warn.textContent = banner; warn.hidden = !banner;
+}
 
 // ---- 画面の状態 ----
 var ui = Object.assign({ mode:"kana", status:"all" }, lsGet(LS_UI) || {});
@@ -399,7 +442,7 @@ function renderDetail(){
 
 function fmt(ms){ var d = new Date(ms); function z(x){ return ("0"+x).slice(-2); } return d.getFullYear()+"/"+z(d.getMonth()+1)+"/"+z(d.getDate())+" "+z(d.getHours())+":"+z(d.getMinutes()); }
 
-function renderAll(){ renderProgress(); renderList(); renderDetail(); }
+function renderAll(){ renderStoreInfo(); renderProgress(); renderList(); renderDetail(); }
 
 function select(id, opts){
   if (!BY_ID[id]) return;
@@ -461,6 +504,7 @@ detailEl.addEventListener("click", function(e){
   var sb = t.closest(".status button");
   if (sb){
     var v = +sb.dataset.v; store.put(state.current, { status:v });
+    toast(store.persistent() ? "「" + STATUS_NAME[v] + "」にしました" : "「" + STATUS_NAME[v] + "」にしましたが、このブラウザでは保存されません");
     detailEl.querySelectorAll(".status button").forEach(function(b){ b.setAttribute("aria-pressed", String(+b.dataset.v === v)); });
     var dot = listEl.querySelector('.item[data-id="' + state.current + '"] .dot'); if (dot) dot.className = "dot" + (v===1?" l":v===2?" m":"");
     renderProgress();
